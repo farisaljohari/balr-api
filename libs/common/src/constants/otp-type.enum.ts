@@ -1,0 +1,4 @@
+export enum OtpType {
+  VERIFICATION = 'VERIFICATION',
+  PASSWORD = 'PASSWORD',
+}

@@ -1,0 +1,8 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/e59d43d4-4479-41b1-b34b-c989d2f4c82f/resourceGroups/backend/providers/Microsoft.Web/sites/syncrow",
+    "appService.deploySubpath": ".",
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ]
+}
