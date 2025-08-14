@@ -1,21 +1,21 @@
-import { UserRepository } from '../../../libs/common/src/modules/user/repositories';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UserSignUpDto } from '../dtos/user-auth.dto';
-import { HelperHashService } from '../../../libs/common/src/helper/services';
-import { UserLoginDto } from '../dtos/user-login.dto';
+import * as argon2 from 'argon2';
 import { AuthService } from '../../../libs/common/src/auth/services/auth.service';
+import { OtpType } from '../../../libs/common/src/constants/otp-type.enum';
+import { HelperHashService } from '../../../libs/common/src/helper/services';
 import { UserSessionRepository } from '../../../libs/common/src/modules/session/repositories/session.repository';
 import { UserOtpRepository } from '../../../libs/common/src/modules/user-otp/repositories/user-otp.repository';
-import { ForgetPasswordDto, UserOtpDto, VerifyOtpDto } from '../dtos';
-import { EmailService } from '../../../libs/common/src/util/email.service';
-import { OtpType } from '../../../libs/common/src/constants/otp-type.enum';
 import { UserEntity } from '../../../libs/common/src/modules/user/entities/user.entity';
-import * as argon2 from 'argon2';
+import { UserRepository } from '../../../libs/common/src/modules/user/repositories';
+import { EmailService } from '../../../libs/common/src/util/email.service';
+import { ForgetPasswordDto, UserOtpDto, VerifyOtpDto } from '../dtos';
+import { UserSignUpDto } from '../dtos/user-auth.dto';
+import { UserLoginDto } from '../dtos/user-login.dto';
 
 @Injectable()
 export class UserAuthService {
@@ -33,7 +33,12 @@ export class UserAuthService {
     if (findUser) {
       throw new BadRequestException('User already registered with given email');
     }
-    const salt = this.helperHashService.randomSalt(10); // Hash the password using bcrypt
+
+    if (!userSignUpDto.policyAgreement) {
+      throw new BadRequestException('You must accept the policy to register');
+    }
+
+    const salt = this.helperHashService.randomSalt(10);
     const hashedPassword = await this.helperHashService.bcrypt(
       userSignUpDto.password,
       salt,
@@ -41,11 +46,15 @@ export class UserAuthService {
 
     try {
       const user = await this.userRepository.save({
-        ...userSignUpDto,
+        email: userSignUpDto.email,
         password: hashedPassword,
+        fullName: userSignUpDto.fullName,
+        dateOfBirth: userSignUpDto.dateOfBirth,
+        position: userSignUpDto.position,
+        policyAgreement: userSignUpDto.policyAgreement, // must be true
       });
 
-      return user;
+      return user; // controller will shape the response
     } catch (error) {
       throw new BadRequestException('Failed to register user');
     }
